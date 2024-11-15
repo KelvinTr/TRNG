@@ -25,10 +25,7 @@ module trng #(parameter NUM_CELLS=3, parameter NUM_INV_START=5, parameter SIM_MO
 
   // Health Tests
   integer cutoff1, cutoff2, B1_in, B2_in, W_in;
-  logic [7:0] A1_in, A2_in, X_in;
-  logic repetition, adaptive;                   // Change logic to output later to send an error signal outwards
-
-
+  logic [7:0] A1_in, A2_in;
 
   genvar i;
   integer j;
@@ -119,7 +116,6 @@ module trng #(parameter NUM_CELLS=3, parameter NUM_INV_START=5, parameter SIM_MO
       if ((B1_in > cutoff1) && ~repetition) begin
         repetition = 1'b1;
         error_o = 1'b0;
-        // $display("Repetition Count Test Failed: %h", data_o);
       end 
     end else begin
       A1_in = data_o;
@@ -134,7 +130,6 @@ module trng #(parameter NUM_CELLS=3, parameter NUM_INV_START=5, parameter SIM_MO
       if ((B2_in > cutoff2) && ~adaptive) begin
         adaptive = 1'b1;
         error_o = 1'b0;
-        // $display("Adaptive Proportion Test Failed: %h", A2_in);
       end
       W_in = W_in + 1;
     end else begin

@@ -4,7 +4,7 @@ module trng #(parameter NUM_CELLS=3, parameter NUM_INV_START=5, parameter SIM_MO
   input  logic       enable_i,
   output logic [7:0] data_o,
   output logic       valid_o,
-  output logic       error_o);
+  output logic [1:0] error_o);
 
   // Entropy Cell Interconnect
   logic [NUM_CELLS-1:0] cell_en_in;
@@ -26,7 +26,6 @@ module trng #(parameter NUM_CELLS=3, parameter NUM_INV_START=5, parameter SIM_MO
   // Health Tests
   integer cutoff1, cutoff2, B1_in, B2_in, W_in;
   logic [7:0] A1_in, A2_in;
-  logic repetition, adaptive;                   // Change logic to output later to send an error signal outwards
 
   genvar i;
   integer j;
@@ -72,8 +71,7 @@ module trng #(parameter NUM_CELLS=3, parameter NUM_INV_START=5, parameter SIM_MO
       A1_in <= 0;
       A2_in <= 0;
       W_in <= 1;
-      repetition <= 0;
-      adaptive <= 0;
+      error_o <= 0;
     end else begin
       debias_sreg <= {debias_sreg[0], cell_sum};
       debias_state <= ~debias_state & cell_en_out[NUM_CELLS-1];
@@ -114,31 +112,29 @@ module trng #(parameter NUM_CELLS=3, parameter NUM_INV_START=5, parameter SIM_MO
     // Repetition Count Test
     if (A1_in == data_o) begin
       B1_in = B1_in + 1;
-      if ((B1_in > cutoff1) && ~repetition) begin
-        repetition = 1'b1;
-        error_o = 1'b0;
+      if ((B1_in > cutoff1) && ~error_o[0]) begin
+        error_o = 2'b01;
       end 
     end else begin
       A1_in = data_o;
       B1_in = 1;
-      repetition = 1'b0;
-      error_o = 0;
+      error_o = 2'b0;
     end
 
     // Adaptive Proportion Test
     if (W_in < 256) begin
       if (A2_in == data_o) B2_in = B2_in + 1;
-      if ((B2_in > cutoff2) && ~adaptive) begin
-        adaptive = 1'b1;
-        error_o = 1'b0;
+      if ((B2_in > cutoff2) && ~error_o[1]) begin
+        error_o = 2'b10;
       end
       W_in = W_in + 1;
     end else begin
       A2_in = data_o;
       W_in = 0;
       B2_in = 0;
-      adaptive = 1'b0;
-      error_o = 0;
+      error_o = 2'b0;
     end
+
+    $display("R: %h | A: %h", error_o[0], error_o[1]);
   end
 endmodule
